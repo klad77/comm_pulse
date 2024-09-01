@@ -18,8 +18,10 @@ def get_questions():
     """Получение списка всех вопросов."""
     questions = Question.query.all()
     # Сериализуем объекты SQLAlchemy в Pydantic модели
-    results = [QuestionResponse.from_orm(question).dict() for question in questions]
-    return jsonify(results)
+    # results = [QuestionResponse.from_orm(question).dict() for question in questions]
+    # return jsonify(results)
+    questions_data = [{'text': q.text, 'category_id': q.category_id} for q in questions]
+    return jsonify(questions_data)
 
 
 @questions_bp.route('/', methods=['POST'])
@@ -32,7 +34,7 @@ def create_question():
     except ValidationError as e:
         return jsonify(e.errors()), 400
 
-    question = Question(text=data['text'])
+    question = Question(text=data['text'], category_id=data['category_id'])
     db.session.add(question)
     db.session.commit()
 
@@ -57,8 +59,9 @@ def update_question(question_id):
         return jsonify({'message': 'Question with this ID not found'}), 404
 
     data = request.get_json()
-    if 'text' in data:
+    if 'text' in data and 'category_id' in data:
         question.text = data['text']
+        question.category_id = data['category_id']
         db.session.commit()
         return jsonify({'message': 'Question updated'}), 200
     else:
